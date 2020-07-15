@@ -3,7 +3,7 @@
 import os
 import math
 import random
-from itertools import combinations
+from itertools import combinations, chain
 
 import pygame
 import head
@@ -55,21 +55,30 @@ class Game:
                        orbit.Orbit((900, 500), 100, [40 for i in range(3)]),
                        orbit.Orbit((200, 400), 100, [40 for i in range(3)])]
 
-        self.players = [head.Head(self, (200.0, 200.0), utils.unit_vector((-1, 0)))]
+        self.players = [head.Head(self, (600.0, 200.0), utils.unit_vector((0, 1)))]
+
+        self.orbs = []
+
         # self.players = [head.Head(self, (random.randrange(200.0, 1400.0), random.randrange(200.0, 600.0)), utils.unit_vector((random.random()*2 - 1, random.random() * 2 - 1))) for i in range(10)]
         # self.players = [orb.Orb(self, (701.0, 200.0), utils.unit_vector((-1, 0))), orb.Orb(self, (100.0, 259.0), utils.unit_vector((1, 0)))]
 
         self.tail = False
 
     def compute(self):
+        # TODO: this will at some point have to be a state machine
 
         running = True
         paused = False
         while running:
 
-
-
+            # TODO: figure out what to do with framerates
             self.clock.tick(60)
+
+            # TODO: unfuck calculation, draw, and update
+
+
+            # react to user input
+            single_frame = False
 
             for e in pygame.event.get():
                 if e.type == pygame.QUIT:
@@ -81,33 +90,20 @@ class Game:
                         self.players[0].act()
                     elif e.key == pygame.K_LEFT:
                         paused = not paused
-
+                    elif e.key == pygame.K_RIGHT:
+                        single_frame = True
 
             if paused:
-                continue
+                if single_frame:
+                    single_frame = False
+                else:
+                    continue
 
-            # Move the player if an arrow key is pressed
-            key = pygame.key.get_pressed()
 
 
-
-            # Draw the scene
-            self.screen.fill((0, 0, 0))
-            color = (255, 200, 0)
-
-            for wall in self.walls:
-                wall.draw(self.screen)
-
-            for o in self.orbits:
-                o.draw(self.screen)
-
+            # check collisions
             for player in self.players:
-                player.move()
-                pygame.draw.circle(self.screen, player.color, [int(val) for val in player.pos], player.radius)
-                trace = player.tracer.retrace(player.pos, player.dir, player.traversed_angle if player.orbit_centre else None)
-                for pos in trace:
-                    pygame.draw.circle(self.screen, player.color, [int(val) for val in pos], 10)
-
+                player.update()
                 player.check_wall_collisions()
 
             pairs = combinations(range(len(self.players)), 2)
@@ -115,9 +111,16 @@ class Game:
                 if utils.overlaps(self.players[i], self.players[j]):
                     utils.change_velocities(self.players[i], self.players[j])
 
+            # move players and Orbs
+            for orb in chain(self.players, self.orbs):
+                orb.move()
+
+            # Draw the scene
+            self.screen.fill((0, 0, 0))
+            for game_object in chain(self.walls, self.orbits, self.players, self.orbs):
+                game_object.draw(self.screen)
+
             pygame.display.flip()
-
-
 
 
 Game().compute()

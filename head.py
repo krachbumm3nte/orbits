@@ -3,81 +3,85 @@ import tracer
 from orb import Orb
 import numpy as np
 import utils
-
-
-def integ(x):
-    return x ** 2 / 2.0 - x ** 3 / 3.0
+import pygame
 
 
 class Head(Orb):
-    interval = 0.05
-    constant = 800
-    dashing_f = [(integ(i + interval) - integ(i)) * constant for i in np.arange(0.0, 1.0, interval)]
-    print(dashing_f)
-    defaultspeed = 3
 
-    def __init__(self, master, pos, dir=(0, 1)):
+    def __init__(self, master, pos, dir=(0, 1), starting_orbs=15):
         Orb.__init__(self, master, pos, dir, [random.randrange(100, 255) for i in range(3)])
         self.speed = self.defaultspeed
         self.orbit_centre = None
         self.clockwise = False
-        self.tracer = tracer.Tracer(self.pos, self.dir, self)
-        self.angle = 0
-        self.traversed_angle = 0
+        self.tracer = tracer.Tracer(self.pos, self.dir, self.dashing_f)
+        self.angle = 0 # TODO: still required?
         self.rot_matrix = np.zeros((2, 2), dtype=float)
         self.dashing = False
+        self.radius = 15
+        self.children = [Orb(self, self.pos, self.dir, self.color) for i in range(starting_orbs)]
         self.dashcounter = 0
 
-    def update_direction(self, direction):
+    def reflect(self, direction):
         self.tracer.deflection(self.pos, direction)
-
         self.dir = direction
+
+    def get_color(self):
+        if self.dashing:
+            return 255, 255, 255
+        else:
+            return self.color
 
     def check_wall_collisions(self):
         pos_new = self.predict_position()
         for w in self.master.walls:
             if utils.distance_p_l(pos_new, w.coll_v[0], w.coll_v[1]) <= self.radius:
 
-                # intersect = utils.seg_intersect(self.pos, np.array([self. pos[i] + 50* self.direction[i] for i in range(2)]), w.coll_v[0], w.coll_v[1])
-                intersect = utils.line_intersection(
-                    (self.pos, self.pos + self.speed * self.dir),
-                    (w.coll_v[0], w.coll_v[1]))
-
+                intersect = utils.line_intersection((self.pos, self.pos + self.speed * self.dir), w.coll_v)
+                # TODO: fix this shite
                 if intersect and self.is_intersection_ahead(intersect):
                     dot = np.dot(self.dir, w.coll_norm)
                     out = self.dir - 2 * dot * w.coll_norm
-                    self.update_direction(np.array(out))
+                    self.reflect(np.array(out))
 
                     if np.isnan(sum(self.dir)):
                         print('sheet')
 
+    def update(self):
+        self.tracer.update()
+
+        if self.dashing:
+            if self.dashcounter >= self.max_dash_length:
+                self.dashing = False
+                self.speed = self.defaultspeed
+                self.dashcounter = 0
+                self.tracer.add_trace(tracer.Flight(self.pos, self.dir))
+            else:
+                self.speed = self.dashing_f[self.dashcounter]
+                self.dashcounter += 1
+
     def move(self):
+
         if self.orbit_centre:
             v0 = self.pos - self.orbit_centre
             v1 = np.matmul(self.rot_matrix, v0)
             p1 = self.orbit_centre + v1
-            self.traversed_angle += self.angle
             self.dir = utils.unit_vector(p1 - self.pos)
             self.pos = p1
         else:
-            if self.dashing:
-                if self.dashcounter >= len(self.dashing_f):
-                    self.dashcounter = 0
-                    self.dashing = False
-                    self.speed = self.defaultspeed
-                else:
-                    self.speed = self.dashing_f[self.dashcounter]
-                    self.dashcounter += 1
             self.pos = self.predict_position()
+
+        # update positions of tail orbs
+        tail_positions = self.tracer.retrace(len(self.children), 0)
+
+        for i in range(len(tail_positions)):
+            self.children[i].move_to(tail_positions[i])
 
     def act(self):
         if self.dashing:
             return
 
         if self.orbit_centre:
-            self.tracer.update(self.traversed_angle)
             self.tracer.deflection(self.pos, self.dir)
-            self.traversed_angle = 0.0
             self.orbit_centre = None
             return
 
@@ -92,26 +96,11 @@ class Head(Orb):
 
                 return
         print('pew')
+        self.fire()
         self.dashing = True
+        self.tracer.add_trace(tracer.Dash(self.pos, self.dir))
 
     def is_intersection_ahead(self, intersect):
-        """
-
-        angle_intersect = np.array([intersect[i] - self.pos[i] for i in range(2)])
-        dot = np.dot(utils.unit_vector(angle_intersect), utils.unit_vector(self.direction))
-        if dot > 1:
-            print("fucked dot: " + str(dot))
-            dot = 1
-        if dot < -1:
-            print("fucked dot: " + str(dot))
-            dot = -1
-
-        cos_a = math.degrees(math.acos(dot))
-
-        if cos_a >= 0:
-            print('ahead')
-        """
-
         for i in range(2):
             if self.dir[i] == 0:
                 continue
@@ -119,5 +108,12 @@ class Head(Orb):
                 return False
         return True
 
+    def fire(self):
+        bullet = self.children.pop()
+        bullet.fire()
 
-# class PState:
+    def draw(self, screen):
+        pygame.draw.circle(screen, self.get_color(), [int(val) for val in self.pos], self.radius)
+        for child in self.children:
+            child.draw(screen)
+

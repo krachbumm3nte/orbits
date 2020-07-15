@@ -2,25 +2,17 @@ import pygame
 import numpy as np
 
 import utils
+from gameutils import GameObject
 
 
-class Wall:
+class Wall(GameObject):
 
     def __init__(self, collision_vector, color=(255, 255, 255)):
         self.coll_v = np.array(collision_vector)
-        self.coll_norm = self.collision_normal(collision_vector)
+        self.coll_norm = utils.normal_vector(collision_vector[0], collision_vector[1])
         self.color = color
 
-    def collision_normal(self, points):
-        a, b = points
-        vector = (a[0] - b[0], a[1] - b[1])
-        normal = -vector[1], vector[0]
-        return utils.unit_vector(normal)
-
     def collides(self, point):
-        pass
-
-    def draw(self, screen):
         pass
 
 

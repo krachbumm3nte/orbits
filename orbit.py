@@ -1,7 +1,8 @@
 import pygame
+from gameutils import GameObject
 
 
-class Orbit:
+class Orbit(GameObject):
     def __init__(self, pos, radius, color):
         self.color = color
         self.pos = pos

@@ -10,6 +10,11 @@ def unit_vector(vector):
     return np.array(foo)
 
 
+def normal_vector(p0, p1):
+    norm = [p1[0] - p0[0], p0[1] - p1[1]]
+    return unit_vector(norm)
+
+
 def perp(a):
     b = np.empty_like(a)
     b[0] = -a[1]
@@ -79,8 +84,8 @@ def change_velocities(o1, o2):
     u1 = o1.dir - 2 * np.dot(o1.dir - o2.dir, o1.pos - o2.pos) / d * (o1.pos - o2.pos)
     u2 = o2.dir - 2 * np.dot(o2.dir - o1.dir, o2.pos - o1.pos) / d * (o2.pos - o1.pos)
 
-    o1.update_direction(unit_vector(u1))
-    o2.update_direction(unit_vector(u2))
+    o1.reflect(unit_vector(u1))
+    o2.reflect(unit_vector(u2))
 
 
 def overlaps(o1, o2):
