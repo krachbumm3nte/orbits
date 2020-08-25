@@ -42,3 +42,4 @@ class Orb(GameObject):
     def fire(self):
         self.speed = self.dash_speed
 
+

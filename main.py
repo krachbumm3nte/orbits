@@ -57,7 +57,7 @@ class Game:
 
         self.orbs = []
 
-        self.players = [head.Head(self, (600.0, 200.0), utils.unit_vector((0.1, 1)))]
+        self.players = [head.Head(self, (400.0, 400.0), utils.unit_vector((-1, -1.01)))]
         # self.players = [head.Head(self, (random.randrange(200.0, 1400.0), random.randrange(200.0, 600.0)), utils.unit_vector((random.random()*2 - 1, random.random() * 2 - 1))) for i in range(10)]
         # self.players = [orb.Orb(self, (701.0, 200.0), utils.unit_vector((-1, 0))), orb.Orb(self, (100.0, 259.0), utils.unit_vector((1, 0)))]
 
@@ -102,8 +102,8 @@ class Game:
 
             # check collisions
             for player in self.players:
-                player.update()
                 player.check_wall_collisions()
+                player.update()
 
             pairs = combinations(range(len(self.players)), 2)
             for i, j in pairs:
@@ -116,7 +116,7 @@ class Game:
 
             # Draw the scene
             self.screen.fill((0, 0, 0))
-            for game_object in chain(self.walls, self.orbits, self.players, self.orbs):
+            for game_object in chain(self.walls, self.orbits, self.orbs, self.players):
                 game_object.draw(self.screen)
 
             pygame.display.flip()

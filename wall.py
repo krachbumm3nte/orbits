@@ -9,7 +9,8 @@ class Wall(GameObject):
 
     def __init__(self, collision_vector, color=(255, 255, 255)):
         self.coll_v = np.array(collision_vector)
-        self.coll_norm = utils.normal_vector(collision_vector[0], collision_vector[1])
+        self.coll_norm = utils.perp(utils.unit_vector(self.coll_v[1] - self.coll_v[0]))
+        print(self.coll_v, self.coll_norm)
         self.color = color
 
     def collides(self, point):
@@ -31,7 +32,7 @@ class RectWall(Wall):
 
 class PolyWall(Wall):
     def __init__(self, points):
-        Wall.__init__(self, points[0:2])
+        Wall.__init__(self, points[:2])
         self.points = points
 
     def draw(self, screen):
