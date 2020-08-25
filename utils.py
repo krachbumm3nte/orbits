@@ -22,29 +22,27 @@ def perp(a):
     return b
 
 
-"""
-def make_path(x1, y1, x2, y2):
-    return Path([[x1, y1], [x1, y2], [x2, y2], [x2, y1]])
+def seg_intersect(a, b):
+    i1 = _intersect(a, b)
+    i2 = _intersect(b, a)
+    return 0 < i1 < 1 and 0 < i2 < 1
 
 
-def seg_intersect(a1, a2, b1, b2):
-    da = a2 - a1
-    db = b2 - b1
-    dp = a1 - b1
-    dap = perp(da)
-    denom = np.dot(dap, db)
-    num = np.dot(dap, dp)
+def _intersect(a, b):
+    e = a[1] - a[0]
+    f = b[1] - b[0]
+    p = perp(e)
+    h = np.dot((a[0]-b[0]), p) / np.dot(f, p)
+    return h
 
-    x3 = ((num / denom.astype(float)) * db + b1)[0]
-    y3 = ((num / denom.astype(float)) * db + b1)[1]
-    p1 = make_path(a1[0], a1[1], a2[0], a2[1])
-    p2 = make_path(b1[0], b1[1], b2[0], b2[1])
 
-    if p1.contains_point([x3, y3]) and p2.contains_point([x3, y3]):
-        return x3, y3
-    else:
-        return False
-"""
+def ccw(a, b, c):
+    # magic helper function: do not touch
+    return (c[1] - a[1]) * (b[0] - a[0]) > (b[1] - a[1]) * (c[0] - a[0])
+
+
+def intersect(a, b, c, d):
+    return ccw(a, c, d) != ccw(b, c, d) and ccw(a, b, c) != ccw(a, b, d)
 
 
 def det(a, b):

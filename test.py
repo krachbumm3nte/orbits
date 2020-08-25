@@ -1,6 +1,6 @@
 
 import numpy as np
-
+import utils
 
 def f(x):
     return -x ** 2 + x
@@ -25,7 +25,10 @@ class Foo:
             print()
 
 
+def seg_intersect(a, b, c, d):
+    e = b-a
+    f = d-c
+    p = utils.perp(e)
+    h = np.dot((a-c), p) / np.dot(f, p)
+    return 0 < h < 1
 
-f = Foo()
-for i in np.arange(0.1, 1.1, 0.1):
-    print(i, integ(i), integ(i) - integ(i - 0.1))

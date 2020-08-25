@@ -4,9 +4,13 @@ from orb import Orb
 import numpy as np
 import utils
 import pygame
+from state import State
 
 
 class Head(Orb):
+
+
+
 
     def __init__(self, master, pos, dir=(0, 1), starting_orbs=15):
         Orb.__init__(self, master, pos, dir, [random.randrange(100, 255) for i in range(3)])
@@ -22,6 +26,7 @@ class Head(Orb):
         self.dashcounter = 0
 
     def reflect(self, direction):
+        print('reflect')
         self.tracer.deflection(self.pos, direction)
         self.dir = direction
 
@@ -32,19 +37,20 @@ class Head(Orb):
             return self.color
 
     def check_wall_collisions(self):
-        pos_new = self.predict_position()
+        pos_new = self.predict_position() + self.dir * self.radius
         for w in self.master.walls:
-            if utils.distance_p_l(pos_new, w.coll_v[0], w.coll_v[1]) <= self.radius:
 
-                intersect = utils.line_intersection((self.pos, self.pos + self.speed * self.dir), w.coll_v)
-                # TODO: fix this shite
-                if intersect and self.is_intersection_ahead(intersect):
-                    dot = np.dot(self.dir, w.coll_norm)
-                    out = self.dir - 2 * dot * w.coll_norm
-                    self.reflect(np.array(out))
+            intersect = utils.seg_intersect((self.pos, pos_new), w.coll_v)
+            # TODO: fix this shite
+            if intersect:
+                dot = np.dot(self.dir, w.coll_norm)
+                out = self.dir - 2 * dot * w.coll_norm
+                self.reflect(np.array(-out))
 
-                    if np.isnan(sum(self.dir)):
-                        print('sheet')
+                if np.isnan(sum(self.dir)):
+                    print('sheet')
+                return
+            #print(intersect, self.pos, self.dir, self.speed, pos_new, w.coll_v)
 
     def update(self):
         self.tracer.update()
@@ -100,13 +106,6 @@ class Head(Orb):
         self.dashing = True
         self.tracer.add_trace(tracer.Dash(self.pos, self.dir))
 
-    def is_intersection_ahead(self, intersect):
-        for i in range(2):
-            if self.dir[i] == 0:
-                continue
-            if ((intersect[i] - self.pos[i]) / self.dir[i]) < 0:
-                return False
-        return True
 
     def fire(self):
         bullet = self.children.pop()
@@ -116,4 +115,16 @@ class Head(Orb):
         pygame.draw.circle(screen, self.get_color(), [int(val) for val in self.pos], self.radius)
         for child in self.children:
             child.draw(screen)
+
+    class dashState(State):
+
+
+    class OrbitState(State):
+        def on_enter(self, head):
+
+            pass
+
+
+
+
 
